@@ -1,7 +1,10 @@
+dominate==2.1.17
 Flask==0.10.1
+Flask-Bootstrap==3.3.5.7
 itsdangerous==0.24
 Jinja2==2.8
 MarkupSafe==0.23
 requests==2.3.0
 steamapi==0.1
+visitor==0.1.2
 Werkzeug==0.11.4
