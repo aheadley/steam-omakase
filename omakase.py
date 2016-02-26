@@ -33,7 +33,7 @@ def select_friends(user_id):
     steam_user = steamapi.user.SteamUser(userid=user_id)
 
     return flask.render_template('select_friends.html',
-        steam_user=steam_user, steam_friends=steam_user.friends)
+        steam_user=steam_user, steam_friends=[f for f in steam_user.friends if f.privacy == 3])
 
 @app.route('/games', methods='POST')
 def find_games():

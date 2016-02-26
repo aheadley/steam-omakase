@@ -1,1 +1,18 @@
 {% extends '_base.html' %}
+{% block content %}
+    {{ super() }}
+    <h1>Select Friends</h1>
+    <p>User: {{ steam_user.name }}</p>
+    <ul>
+        {% for steam_friend in steam_friends %}
+        <li>
+            <img src="{{ steam_friend.avatar }}"></img>
+            [{{ steam_friend.level }}]
+            <a href="{{ url_for('select_friends', user_id=steam_friend.id) }}">
+                {{ steam_friend.name }}
+            </a>
+            ({{ steam_friend.xp }})
+        </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
