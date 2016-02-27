@@ -1,5 +1,5 @@
 {% extends '_base.html' %}
-{% block content %}
+{% block page_content %}
     {{ super() }}
     <h1>Game Intersection</h1>
     <p>Intersection of <strong>{{ steam_user.name }}</strong> and <strong>{{ steam_friends|map(attribute='name')|join(', ') }}</strong></p>

@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import os
+import random
 
 import flask
 import flask_bootstrap
@@ -62,7 +63,7 @@ class OmakaseHelper(object):
         self._cache.set(self._cache_key('app', app_id), app_data, timeout=3600 * 24 * 7)
         return app_data
 
-    def get_game_intersection(self, steam_user, friends):
+    def get_game_intersection(self, steam_user, friends, platforms):
         game_ids = set(g.id for g in helper.fetch_games_by_user(steam_user))
 
         for friend in friends:
@@ -73,7 +74,8 @@ class OmakaseHelper(object):
         game_info = [g for g in game_info if g is not None]
         game_info = [g for g in game_info \
             if 1 in [c['id'] for c in g['categories']] \
-                and g['type'] == 'game']
+                and g['type'] == 'game'
+                and all(g['platforms'][v] for v in platforms)]
 
         return game_info
 
@@ -94,12 +96,22 @@ helper = OmakaseHelper(app)
 def index():
     return flask.render_template('index.html')
 
-@app.route('/user/search/<query_string>', methods='POST')
-def select_user(query_string):
+@app.route('/about')
+def about():
+    return flask.render_template('about.html')
+
+@app.route('/user/search', methods=['POST'])
+def select_user():
+    query_string = flask.request.form['query_string']
     if query_string.isdigit():
+        print query_string
         steam_user = helper.fetch_user_by_id(int(query_string))
     else:
-        steam_user = helper.fetch_user_by_url_token(query_string)
+        try:
+            steam_user = helper.fetch_user_by_url_token(query_string)
+        except steamapi.user.UserNotFoundError as err:
+            return flask.redirect(flask.url_for('index',
+                msg='Couldn\'t find a user with that url token'))
     return flask.redirect(flask.url_for('select_friends',
         user_id=steam_user.id))
 
@@ -110,28 +122,33 @@ def select_friends(user_id):
     return flask.render_template('select_friends.html',
         steam_user=steam_user, steam_friends=[f for f in helper.fetch_friends_by_user(steam_user) if f.privacy >= 3])
 
-@app.route('/games/<int:user_id>/<friend_ids>/')
-def game_intersection_list(user_id, friend_ids):
+@app.route('/games/<int:user_id>/', methods=['POST'])
+def game_intersection_list(user_id):
     steam_user = helper.fetch_user_by_id(user_id)
-    friend_ids = list(set(int(fid) for fid in friend_ids.split(',')))
+    friend_ids = list(set(int(fid) for fid in flask.request.form.getlist('friend_ids')))
     friends = [helper.fetch_user_by_id(fid) for fid in friend_ids]
+    platforms = flask.request.form.getlist('os')
 
-    shared_games = helper.get_game_intersection(steam_user, friends)
+    shared_games = helper.get_game_intersection(steam_user, friends, platforms)
 
     return flask.render_template('game_intersection_list.html',
         steam_user=steam_user,
         steam_friends=friends,
         shared_games=shared_games)
 
-@app.route('/games/<int:user_id>/<friend_ids>/omakase')
-def game_omakase(user_id, friend_ids):
+@app.route('/games/<int:user_id>/omakase', methods=['POST'])
+def game_omakase(user_id):
     steam_user = helper.fetch_user_by_id(user_id)
-    friend_ids = list(set(int(fid) for fid in friend_ids.split(',')))
+    friend_ids = list(set(int(fid) for fid in flask.request.form.getlist('friend_ids')))
     friends = [helper.fetch_user_by_id(fid) for fid in friend_ids]
+    platforms = flask.request.form.getlist('os')
 
-    shared_games = helper.get_game_intersection(steam_user, friends)
+    shared_games = helper.get_game_intersection(steam_user, friends, platforms)
 
-    return 'NYI'
+    selected_game = random.choice(shared_games)
+
+    return flask.render_template('game_intersection_omakase.html',
+        the_game=selected_game)
 
 if __name__ == '__main__':
     app.run(debug=True)

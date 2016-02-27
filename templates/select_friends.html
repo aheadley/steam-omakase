@@ -1,18 +1,40 @@
 {% extends '_base.html' %}
-{% block content %}
-    {{ super() }}
-    <h1>Select Friends</h1>
-    <p>User: {{ steam_user.name }}</p>
-    <ul>
-        {% for steam_friend in steam_friends %}
-        <li>
-            <img src="{{ steam_friend.avatar }}"></img>
-            [{{ steam_friend.level }}]
-            <a href="{{ url_for('find_games_test', user_id=steam_user.id, friend_ids=steam_friend.id) }}">
-                {{ steam_friend.name }}
-            </a>
-            ({{ steam_friend.xp }})
-        </li>
+{% block page_content %}
+    <h1>Hi {{ steam_user.name }}!</h1>
+    <h3>Now I just need to know who you want to play with</h3>
+    <hr>
+    <div class="container">
+        <form action="{{ url_for('game_intersection_list', user_id=steam_user.id) }}" method="post">
+        <div class="btn-group" role="group">
+            <div type="button" class="btn btn-default">
+                <input type="checkbox" name="os" value="windows" checked>
+                Windows
+            </div>
+            <div type="button" class="btn btn-default">
+                <input type="checkbox" name="os" value="mac">
+                OS X
+            </div>
+            <div type="button" class="btn btn-default">
+                <input type="checkbox" name="os" value="linux">
+                Linux/SteamOS
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success pull-right">GO</button>
+        <br>
+        <hr>
+    {% for friend_batch in steam_friends|batch(3) %}
+        <div class="row">
+        {% for steam_friend in friend_batch %}
+            <div class="col-md-4 panel panel-default">
+                <input type="checkbox" name="friend_ids" value="{{ steam_friend.id }}">
+                <img class="img-rounded" src="{{ steam_friend.avatar }}"></img>
+                <a href="{{ url_for('game_intersection_list', user_id=steam_user.id, friend_ids=steam_friend.id) }}">
+                    <h4>{{ steam_friend.name }}</h4>
+                </a>
+            </div>
         {% endfor %}
-    </ul>
+        </div>
+    {% endfor %}
+        </form>
+    </div>
 {% endblock %}
