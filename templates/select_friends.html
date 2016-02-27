@@ -8,7 +8,7 @@
         <li>
             <img src="{{ steam_friend.avatar }}"></img>
             [{{ steam_friend.level }}]
-            <a href="{{ url_for('select_friends', user_id=steam_friend.id) }}">
+            <a href="{{ url_for('find_games_test', user_id=steam_user.id, friend_ids=steam_friend.id) }}">
                 {{ steam_friend.name }}
             </a>
             ({{ steam_friend.xp }})

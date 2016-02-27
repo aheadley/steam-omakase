@@ -2,4 +2,14 @@
 {% block content %}
     {{ super() }}
     <h1>Game Intersection</h1>
+    <p>Intersection of <strong>{{ steam_user.name }}</strong> and <strong>{{ steam_friends|map(attribute='name')|join(', ') }}</strong></p>
+    <ul>
+    {% for game in shared_games %}
+        <li>
+            <a href="https://store.steampowered.com/app/{{ game.steam_appid }}/">
+                {{ game.name }}
+            </a>
+        </li>
+    {% endfor %}
+    </ul>
 {% endblock %}
