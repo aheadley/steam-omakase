@@ -1,15 +1,24 @@
 {% extends '_base.html' %}
 {% block page_content %}
-    <div class="jumbotron">
+    <div class="jumbotron text-center">
         <h1>Steam オマカセ</h1>
         <h3>Not sure what to play with your friends?</h3>
         <p>I can help! First tell me who you are...</p>
-        <form class="form-horizontal" action="{{ url_for('select_user') }}" method="post">
-            <div class="input-group">
-                <input type="text" class="form-control" placeholder="Steam vanity url or ID"
-                        name="query_string">
-                <button type="submit" class="btn btn-success">GO</button>
+        <div class="row">
+            <div class="col-md-4 col-md-offset-4">
+                <form action="{{ url_for('select_user') }}" method="post">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Steam vanity url or ID"
+                                name="query_string">
+                        <span class="input-group-btn">
+                            <button type="submit" class="btn btn-success">
+                                {{ base_macros.bs_icon('search') }}
+                                Go
+                            </button>
+                        </span>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
 {% endblock %}

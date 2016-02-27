@@ -1,15 +1,26 @@
 {% extends '_base.html' %}
 {% block page_content %}
-    {{ super() }}
-    <h1>Game Intersection</h1>
-    <p>Intersection of <strong>{{ steam_user.name }}</strong> and <strong>{{ steam_friends|map(attribute='name')|join(', ') }}</strong></p>
-    <ul>
-    {% for game in shared_games %}
-        <li>
-            <a href="https://store.steampowered.com/app/{{ game.steam_appid }}/">
-                {{ game.name }}
-            </a>
-        </li>
-    {% endfor %}
-    </ul>
+    <div class="container">
+        <div class="jumbotron text-center">
+            <h1>
+                You have {{ shared_games|count }} games in common!
+            </h1>
+            <h4>
+                Game library intersection of <strong>{{ steam_user.name }}</strong> and
+                <strong>{{ steam_friends | map(attribute='name') | join(', ') }}</strong>
+            </h4>
+        </div>
+    </div>
+    <hr>
+    <div class="container">
+        {% for app_batch in shared_games|batch(3) %}
+        <div class="row">
+            <div>
+            {% for steam_app in app_batch %}
+                {{ base_macros.steam_app_button(steam_app) }}
+            {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 {% endblock %}

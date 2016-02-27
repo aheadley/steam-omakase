@@ -1,40 +1,84 @@
 {% extends '_base.html' %}
 {% block page_content %}
-    <h1>Hi {{ steam_user.name }}!</h1>
-    <h3>Now I just need to know who you want to play with</h3>
-    <hr>
-    <div class="container">
-        <form action="{{ url_for('game_intersection_list', user_id=steam_user.id) }}" method="post">
-        <div class="btn-group" role="group">
-            <div type="button" class="btn btn-default">
-                <input type="checkbox" name="os" value="windows" checked>
-                Windows
-            </div>
-            <div type="button" class="btn btn-default">
-                <input type="checkbox" name="os" value="mac">
-                OS X
-            </div>
-            <div type="button" class="btn btn-default">
-                <input type="checkbox" name="os" value="linux">
-                Linux/SteamOS
-            </div>
+    <form action="{{ url_for('game_intersection', user_id=steam_user.id) }}" method="post">
+        <div class="jumbotron text-center">
+            <h1>Hi {{ base_macros.steam_profile_link(steam_user) }}!</h1>
+            <h3>Just need you to tell me a couple more things</h3>
         </div>
-        <button type="submit" class="btn btn-success pull-right">GO</button>
-        <br>
         <hr>
-    {% for friend_batch in steam_friends|batch(3) %}
-        <div class="row">
-        {% for steam_friend in friend_batch %}
-            <div class="col-md-4 panel panel-default">
-                <input type="checkbox" name="friend_ids" value="{{ steam_friend.id }}">
-                <img class="img-rounded" src="{{ steam_friend.avatar }}"></img>
-                <a href="{{ url_for('game_intersection_list', user_id=steam_user.id, friend_ids=steam_friend.id) }}">
-                    <h4>{{ steam_friend.name }}</h4>
-                </a>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>
+                        Select the platforms you and your friends are on...
+                    </h4>
+                </div>
+                <div class="col-md-4 col-md-offset-2 btn-group" data-toggle="buttons">
+                    <label class="btn btn-default active">
+                        <input type="checkbox" name="os" value="windows" checked>
+                        {{ base_macros.fa_icon('windows') }}
+                        Windows
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="checkbox" name="os" value="mac">
+                        {{ base_macros.fa_icon('apple') }}
+                        OS X
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="checkbox" name="os" value="linux">
+                        {{ base_macros.fa_icon('linux') }}
+                        Linux/SteamOS
+                    </label>
+                </div>
             </div>
-        {% endfor %}
         </div>
-    {% endfor %}
-        </form>
-    </div>
+        <hr>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>
+                        And the friends you want to play with...
+                    </h4>
+                </div>
+                <div class="col-md-6 text-right">
+                    <h4>
+                        <small>
+                            (Greyed out friends don't have public profiles so I can't see what games they have)
+                        </small>
+                    </h4>
+                </div>
+            </div>
+            {% for friend_batch in steam_friends|batch(4) %}
+            <div class="row">
+                <div data-toggle="buttons">
+                {% for steam_friend in friend_batch %}
+                    {{ base_macros.steam_friend_button(steam_friend) }}
+                {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <hr>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>
+                        That's it, just press one of these buttons!
+                    </h4>
+                </div>
+                <div class="col-md-6">
+                    <div class="pull-right form-horizontal">
+                        <button type="submit" class="btn btn-primary">
+                            {{ base_macros.bs_icon('th-list') }}
+                            List shared games
+                        </button>
+                        <button type="submit" class="btn btn-success" name="omakase" value="true">
+                            {{ base_macros.bs_icon('search') }}
+                            Just pick something
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
 {% endblock %}

@@ -1,0 +1,27 @@
+{% extends '_base.html' %}
+{% include '_macros.html' %}
+{% block page_content %}
+    <div class="jumbotron text-center">
+        <h1>How about <a href="{{ base_macros.steam_store_url(the_game) }}">{{ the_game.name }}</a>?</h1>
+        <img class="img-rounded" src="{{ the_game.header_image }}"></img>
+    </div>
+    <hr>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-md-offset-3">
+                <p>{{ the_game.about_the_game|safe }}</p>
+            </div>
+            <div class="col-md-3 text-center">
+            <a href="{{ base_macros.steam_install_url(the_game) }}" class="btn btn-primary">
+                {{ base_macros.bs_icon('save') }}
+                Install
+            </a>
+            <a href="{{ base_macros.steam_run_url(the_game) }}" class="btn btn-success">
+                {{ base_macros.bs_icon('play') }}
+                Play
+            </a>
+        </div>
+
+        </div>
+    </div>
+{% endblock %}

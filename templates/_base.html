@@ -1,27 +1,41 @@
 {% extends 'bootstrap/base.html' %}
+{% import '_macros.html' as base_macros %}
 {% block title %}Steam オマカセ{% endblock %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet"
+        href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+{% endblock %}
 {% block content %}
     {{ super() }}
     <div class="container">
         <div class="header clearfix">
             <nav>
-                <ul class="nav nav-pulls pull-right">
+                <ul class="nav nav-pills pull-right">
                     <li role="presentation"><a href="{{ url_for('index') }}">Home</a></li>
                     <li role="presentation"><a href="{{ url_for('about') }}">About</a></li>
                 </ul>
             </nav>
-            <h3 class="text-muted">Steam オマカセ</h3>
+            <h3 class="text-muted">
+                {{ base_macros.fa_icon('steam') }}
+                Steam オマカセ
+            </h3>
         </div>
         <div class="container row">
             {% if request.args.msg %}
-            <div class="col-md-12 alert alert-warning" role="alert">
+            <div class="col-md-12 alert alert-warning text-center" role="alert">
                 <strong>Oops!</strong>
-                <p>{{ request.args.msg }}</p>
+                <span>{{ request.args.msg }}</span>
             </div>
             {% endif %}
         </div>
-        {% block page_content %}{% endblock %}
+        <hr>
+        <div class="container">
+            {% block page_content %}{% endblock %}
+        </div>
+        <hr>
         <footer class="footer">
+            <p class="pull-right">Source on <a href="https://github.com/aheadley/steam-omakase">GitHub</a></p>
             <p>&copy; 2016 <a href="https://github.com/aheadley">aheadley</a></p>
         </footer>
     </div>

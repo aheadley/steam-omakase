@@ -1,0 +1,33 @@
+{% macro steam_store_url(app) -%}
+https://store.steampowered.com/app/{{ app.steam_appid }}/
+{%- endmacro %}
+{% macro steam_run_url(app) -%}
+steam://run/{{ app.steam_appid }}
+{%- endmacro %}
+{% macro steam_install_url(app) -%}
+steam://install/{{ app.steam_appid }}
+{%- endmacro %}
+{% macro steam_profile_link(user) -%}
+<a href="{{ user.profile_url }}">{{ user.name }}</a>
+{%- endmacro %}
+{% macro bs_icon(name) -%}
+<span class="glyphicon glyphicon-{{ name }}"></span>
+{%- endmacro %}
+{% macro fa_icon(name) -%}
+<i class="fa fa-{{ name }}"></i>
+{%- endmacro %}
+{% macro steam_friend_button(user) %}
+<label class="btn btn-default {% if not user.privacy >= 3 %}disabled{% endif %} col-md-3"
+        alt="This user's profile is not public">
+    <input type="checkbox" name="friend_ids" value="{{ user.id }}"
+            {% if not user.privacy >= 3 %}disabled{% endif %}
+            alt="This user's profile is not public">
+    <img src="{{ user.avatar }}" alt="{{ user.name }}" class="img-rounded img-responsive pull-left">
+    <h5>{{ steam_profile_link(user) }}</h5>
+</label>
+{% endmacro %}
+{% macro steam_app_button(app) %}
+<a class="btn btn-default col-md-4" href="{{ steam_store_url(app) }}">
+    <img src="{{ app.header_image }}" alt="{{ app.name }}" class="img-rounded img-responsive">
+</a>
+{% endmacro %}
