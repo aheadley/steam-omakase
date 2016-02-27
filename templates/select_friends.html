@@ -49,12 +49,10 @@
                 </div>
             </div>
             {% for friend_batch in steam_friends|batch(4) %}
-            <div class="row">
-                <div data-toggle="buttons">
-                {% for steam_friend in friend_batch %}
-                    {{ base_macros.steam_friend_button(steam_friend) }}
-                {% endfor %}
-                </div>
+            <div class="row" data-toggle="buttons">
+            {% for steam_friend in friend_batch %}
+                {{ base_macros.steam_friend_button(steam_friend) }}
+            {% endfor %}
             </div>
             {% endfor %}
         </div>

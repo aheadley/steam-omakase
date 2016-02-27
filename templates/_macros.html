@@ -17,13 +17,16 @@ steam://install/{{ app.steam_appid }}
 <i class="fa fa-{{ name }}"></i>
 {%- endmacro %}
 {% macro steam_friend_button(user) %}
-<label class="btn btn-default {% if not user.privacy >= 3 %}disabled{% endif %} col-md-3"
-        alt="This user's profile is not public">
+<label class="btn btn-default fluid {% if not user.privacy >= 3 %}disabled{% endif %} col-md-3"
+        alt="This user's profile is not public"
+        style="display: block">
     <input type="checkbox" name="friend_ids" value="{{ user.id }}"
             {% if not user.privacy >= 3 %}disabled{% endif %}
             alt="This user's profile is not public">
     <img src="{{ user.avatar }}" alt="{{ user.name }}" class="img-rounded img-responsive pull-left">
-    <h5>{{ steam_profile_link(user) }}</h5>
+    <h4>
+        {{ steam_profile_link(user) }}
+    </h4>
 </label>
 {% endmacro %}
 {% macro steam_app_button(app) %}
