@@ -1,0 +1,102 @@
+{% extends '_base.html' %}
+{% block page_content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h3>
+                    Why?
+                </h3>
+                <p>
+                    Because some friends and I spent an hour sitting in Mumble
+                    trying to figure out what to play one night, and Steam
+                    inexplicably doesn't have this functionality built in.
+                </p>
+                <p>
+                    There are some similiar features on other sites but none of
+                    them (that I found anyway) worked the way I wanted.
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <hr class="col-md-8 col-md-offset-1">
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h3>
+                    What does 「オマカセ」 mean?
+                </h3>
+                <p>
+                    "<a href="https://en.wikipedia.org/wiki/Omakase">OMAKASE</a>"
+                    (pronounced "oh-mah-kah-say") means
+                    something like "I'll leave it up to you". It's typically used in
+                    sushi restaurants to let the chef decide what sushi to serve. Seemed
+                    appropriate for the original planned functionality which did
+                    not include the list of shared games, only the "Just pick one"
+                    button.
+                </p>
+                <p>
+                    It's written with Katakana because it looks cooler and I
+                    don't know the Kanji for it.
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <hr class="col-md-8 col-md-offset-1">
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h3>
+                    How does this work?
+                </h3>
+                <p>
+                    The core bits are <a href="https://github.com/smiley/steamapi">smiley/steamapi</a>
+                    for getting user/friend/owned-games data
+                    and the <a href="https://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI">Steam storefront API</a>
+                    for getting data about the games themselves. Then it's a simple set
+                    intersection after filtering by platform.
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <hr class="col-md-8 col-md-offset-1">
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h3>
+                    It should let me include people from groups that I'm in!
+                </h3>
+                <p>
+                    It should! But the <a href="https://github.com/smiley/steamapi">steamapi</a>
+                    module didn't have a quick/easy way to get the name of the group
+                    or the list of members, plus it could potentially significantly
+                    increase the amount of work in the intersection request so it
+                    was left out for now. Maybe it will be added in the future.
+                </p>
+                <p>
+                    It will probably never allow the intersection of arbitrary
+                    collections of people (i.e. people you're not friends with or
+                    in a group with).
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <hr class="col-md-8 col-md-offset-1">
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h3>
+                    I found a bug!
+                </h3>
+                <p>
+                    Cool! There are probably a few of them since this was thrown
+                    together in a few hours. You can report it on
+                    <a href="https://github.com/aheadley/steam-omakase/issues">GitHub</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
