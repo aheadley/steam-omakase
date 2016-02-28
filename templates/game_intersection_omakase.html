@@ -1,8 +1,19 @@
 {% extends '_base.html' %}
 {% block page_content %}
-    <div class="jumbotron text-center">
-        <h1>How about <a href="{{ base_macros.steam_store_url(the_game) }}">{{ the_game.name }}</a>?</h1>
-        <img class="img-rounded" src="{{ the_game.header_image }}"></img>
+    <div class="jumbotron">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h1>
+                    How about
+                    <a href="{{ base_macros.steam_store_url(the_game) }}">{{ the_game.name }}</a>?
+                </h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <img class="img-rounded img-responsive center-block" src="{{ the_game.header_image }}">
+            </div>
+        </div>
     </div>
     <hr>
     <div class="container">

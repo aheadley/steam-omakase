@@ -94,7 +94,7 @@ class OmakaseHelper(object):
         game_info = [helper.fetch_appdetails_by_id(gid) for gid in game_ids]
         game_info = [g for g in game_info if g is not None]
         game_info = [g for g in game_info \
-            if 1 in [c['id'] for c in g['categories']] \
+            if 1 in [c['id'] for c in g.get('categories', [])] \
                 and g['type'] == 'game'
                 and all(g['platforms'][v] for v in platforms)]
 
