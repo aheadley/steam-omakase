@@ -13,6 +13,7 @@
     </div>
     <hr>
     <div class="container">
+        {% if shared_games|count > 0 %}
         {% for app_batch in shared_games|batch(3) %}
         <div class="row">
             {% for steam_app in app_batch %}
@@ -23,5 +24,14 @@
         <hr>
         {% endif %}
         {% endfor %}
+        {% else %}
+        <div class="row text-center">
+            <div class="col-md-12">
+                <h2>
+                    Dang, that sucks!
+                </h2>
+            </div>
+        </div>
+        {% endif %}
     </div>
 {% endblock %}

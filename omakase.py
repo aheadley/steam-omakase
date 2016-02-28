@@ -201,7 +201,9 @@ def game_intersection(user_id):
 
     shared_games = helper.get_game_intersection(steam_user, friends, platforms)
 
-    if 'omakase' in flask.request.form and flask.request.form['omakase'] == 'true':
+    if 'omakase' in flask.request.form \
+            and flask.request.form['omakase'] == 'true' \
+            and len(shared_games) > 0:
         selected_game = helper.choose_game(steam_user, friends, shared_games)
 
         app.logger.info('Omakase choice: [appid:%s] %s',
