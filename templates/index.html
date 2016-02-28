@@ -1,9 +1,8 @@
 {% extends '_base.html' %}
 {% block page_content %}
     <div class="jumbotron text-center">
-        <h1>Steam オマカセ</h1>
-        <h3>Not sure what to play with your friends?</h3>
-        <p>I can help! First tell me who you are...</p>
+        <h1>Not sure what to play with your friends?</h1>
+        <h3>I can help! First tell me who you are...</h3>
         <div class="row">
             <div class="col-md-6 col-md-offset-3">
                 <form action="{{ url_for('select_user') }}" method="post">

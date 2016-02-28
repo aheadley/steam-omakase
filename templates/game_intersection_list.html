@@ -15,12 +15,13 @@
     <div class="container">
         {% for app_batch in shared_games|batch(3) %}
         <div class="row">
-            <div>
             {% for steam_app in app_batch %}
-                {{ base_macros.steam_app_button(steam_app) }}
+            {{ base_macros.steam_app_button(steam_app) }}
             {% endfor %}
-            </div>
         </div>
+        {% if not loop.last %}
+        <hr>
+        {% endif %}
         {% endfor %}
     </div>
 {% endblock %}

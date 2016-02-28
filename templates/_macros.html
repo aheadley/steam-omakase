@@ -17,9 +17,9 @@ steam://install/{{ app.steam_appid }}
 <i class="fa fa-{{ name }}"></i>
 {%- endmacro %}
 {% macro steam_friend_button(user) %}
-<label class="btn btn-default fluid {% if not user.privacy >= 3 %}disabled{% endif %} col-md-3"
+<label class="btn btn-default {% if not user.privacy >= 3 %}disabled{% endif %} col-md-3"
         alt="This user's profile is not public"
-        style="display: block">
+        style="display: block;">
     <input type="checkbox" name="friend_ids" value="{{ user.id }}"
             {% if not user.privacy >= 3 %}disabled{% endif %}
             alt="This user's profile is not public">
@@ -30,7 +30,21 @@ steam://install/{{ app.steam_appid }}
 </label>
 {% endmacro %}
 {% macro steam_app_button(app) %}
-<a class="btn btn-default col-md-4" href="{{ steam_store_url(app) }}">
-    <img src="{{ app.header_image }}" alt="{{ app.name }}" class="img-rounded img-responsive">
-</a>
+<div class="col-md-4">
+    <img src="{{ app.header_image }}" alt="{{ app.name }}" class="img-thumbnail img-responsive">
+    <div class="btn-group btn-group-justified text-center" role="group">
+        <a class="btn btn-default col-md-4" href="{{ steam_store_url(app) }}">
+            {{ fa_icon('steam') }}
+            <span>Steam</span>
+        </a>
+        <a class="btn btn-primary col-md-4" href="{{ steam_install_url(app) }}">
+            {{ bs_icon('save') }}
+            <span>Install</span>
+        </a>
+        <a class="btn btn-success col-md-4" href="{{ steam_run_url(app) }}">
+            {{ bs_icon('play') }}
+            <span>Play</span>
+        </a>
+    </div>
+</div>
 {% endmacro %}
