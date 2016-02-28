@@ -4,10 +4,10 @@ Flask-Bootstrap==3.3.5.7
 itsdangerous==0.24
 Jinja2==2.8
 MarkupSafe==0.23
-python-memcached==1.57
 requests==2.3.0
 six==1.10.0
 git+https://github.com/smiley/steamapi.git
 visitor==0.1.2
 Werkzeug==0.11.4
 gunicorn==19.4.5
+python-binary-memcached==0.24.6

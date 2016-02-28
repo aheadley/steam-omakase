@@ -8,6 +8,7 @@ import flask_bootstrap
 import steamapi
 import requests
 import werkzeug.contrib.cache
+import bmemcached
 
 class OmakaseHelper(object):
     STOREFRONT_API_ENDPOINT = 'http://store.steampowered.com/api/{method}/'
@@ -21,11 +22,18 @@ class OmakaseHelper(object):
     def __init__(self, app):
         # http://steamcommunity.com/dev/apikey
         self._api_key = os.environ.get('STEAM_API_KEY')
-        self._memcached_servers = os.environ.get('MEMCACHED_SERVERS')
+        self._memcached_config = {
+            'servers': os.environ.get('MEMCACHEDCLOUD_SERVERS').split(','),
+            'username': os.environ.get('MEMCACHEDCLOUD_USERNAME'),
+            'password': os.environ.get('MEMCACHEDCLOUD_PASSWORD'),
+        }
 
         self._app = app
         self._api = steamapi.core.APIConnection(api_key=self._api_key)
-        self._cache = werkzeug.contrib.cache.MemcachedCache(self._memcached_servers)
+        self._cache = werkzeug.contrib.cache.MemcachedCache(
+            bmemcached.Client(self._memcached_config['servers'],
+                self._memcached_config['username'],
+                self._memcached_config['password']))
 
     def fetch_user_by_id(self, user_id):
         v = self._cache.get(self._cache_key('user', user_id))
