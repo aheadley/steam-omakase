@@ -3,6 +3,7 @@
 import os
 import random
 import re
+import logging
 
 import flask
 import flask_bootstrap
@@ -124,6 +125,12 @@ flask_bootstrap.Bootstrap(app)
 
 helper = OmakaseHelper(app)
 
+@app.before_first_request
+def setup_logging():
+    if not app.debug:
+        app.logger.addHandler(logging.StreamHandler())
+        app.logger.setLevel(logging.INFO)
+
 @app.route('/')
 def index():
     return flask.render_template('index.html')
@@ -135,6 +142,7 @@ def about():
 @app.route('/user/search', methods=['POST'])
 def select_user():
     query_string = flask.request.form['query_string']
+    app.logger.info('Searching for: %s', query_string)
     if query_string.isdigit():
         steam_user = helper.fetch_user_by_id(int(query_string))
     else:
