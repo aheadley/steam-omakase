@@ -10,3 +10,4 @@ six==1.10.0
 git+https://github.com/smiley/steamapi.git
 visitor==0.1.2
 Werkzeug==0.11.4
+gunicorn==19.4.5
