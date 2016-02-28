@@ -2,6 +2,7 @@
 
 import os
 import random
+import re
 
 import flask
 import flask_bootstrap
@@ -11,6 +12,7 @@ import werkzeug.contrib.cache
 import bmemcached
 
 class OmakaseHelper(object):
+    STEAMCOMMUNITY_URL_RE = re.compile(r'https?://(?:www\.)?steamcommunity.com/id/([^/]+)/.*')
     STOREFRONT_API_ENDPOINT = 'http://store.steampowered.com/api/{method}/'
 
     PLATFORMS = [
@@ -132,11 +134,14 @@ def select_user():
     if query_string.isdigit():
         steam_user = helper.fetch_user_by_id(int(query_string))
     else:
+        match = self.STEAMCOMMUNITY_URL_RE.match(query_string)
+        if match:
+            query_string = m.group(1)
         try:
             steam_user = helper.fetch_user_by_url_token(query_string)
         except steamapi.user.UserNotFoundError as err:
             return flask.redirect(flask.url_for('index',
-                msg='Couldn\'t find a user with that url token'))
+                msg='Couldn\'t find a user with that url'))
     if not helper.user_is_public(steam_user):
         return flask.redirect(flask.url_for('index',
             msg='It looks like your profile isn\'t public, {}'.format(steam_user.name)))
