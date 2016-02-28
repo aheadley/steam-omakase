@@ -159,18 +159,26 @@ def select_user():
         except steamapi.user.UserNotFoundError as err:
             return flask.redirect(flask.url_for('index',
                 msg='Couldn\'t find a user with that url'))
+
+    app.logger.info('Selected user: %s', steam_user.name)
+
     if not helper.user_is_public(steam_user):
         return flask.redirect(flask.url_for('index',
             msg='It looks like your profile isn\'t public, {}'.format(steam_user.name)))
+
     return flask.redirect(flask.url_for('select_friends',
         user_id=steam_user.id))
 
 @app.route('/user/<int:user_id>/friends/')
 def select_friends(user_id):
     steam_user = helper.fetch_user_by_id(user_id)
+    steam_friends = helper.fetch_friends_by_user(steam_user)
+
+    app.logger.info('Fetched %s friends for user: %s',
+        len(steam_friends), steam_user.name)
 
     return flask.render_template('select_friends.html',
-        steam_user=steam_user, steam_friends=helper.fetch_friends_by_user(steam_user))
+        steam_user=steam_user, steam_friends=steam_friends)
 
 @app.route('/user/<int:user_id>/game/', methods=['POST'])
 def game_intersection(user_id):
@@ -187,10 +195,18 @@ def game_intersection(user_id):
             user_id=user_id,
             msg='I need to know what platforms to check support for'))
 
+    app.logger.info('Intersecting %s and %s on platforms: %s',
+        steam_user.name, ', '.join(f.name for f in friends),
+        ', '.join(platforms))
+
     shared_games = helper.get_game_intersection(steam_user, friends, platforms)
 
     if 'omakase' in flask.request.form and flask.request.form['omakase'] == 'true':
         selected_game = helper.choose_game(steam_user, friends, shared_games)
+
+        app.logger.info('Omakase choice: [appid:%s] %s',
+            selected_game['steam_appid'], selected_game['name'])
+
         return flask.render_template('game_intersection_omakase.html',
             steam_user=steam_user,
             steam_friends=friends,
