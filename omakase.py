@@ -25,17 +25,21 @@ class OmakaseHelper(object):
         # http://steamcommunity.com/dev/apikey
         self._api_key = os.environ.get('STEAM_API_KEY')
         self._memcached_config = {
-            'servers': os.environ.get('MEMCACHEDCLOUD_SERVERS').split(','),
+            'servers': os.environ.get('MEMCACHEDCLOUD_SERVERS'),
             'username': os.environ.get('MEMCACHEDCLOUD_USERNAME'),
             'password': os.environ.get('MEMCACHEDCLOUD_PASSWORD'),
         }
 
         self._app = app
         self._api = steamapi.core.APIConnection(api_key=self._api_key)
-        self._cache = werkzeug.contrib.cache.MemcachedCache(
-            bmemcached.Client(self._memcached_config['servers'],
-                self._memcached_config['username'],
-                self._memcached_config['password']))
+        if os.environ.get('MEMCACHEDCLOUD_SERVERS'):
+            self._cache = werkzeug.contrib.cache.MemcachedCache(
+                bmemcached.Client(self._memcached_config['servers'].split(','),
+                    self._memcached_config['username'],
+                    self._memcached_config['password']))
+        else:
+            self._cache = werkzeug.contrib.cache.MemcachedCache(
+                os.environ.get('MEMCACHED_SERVERS').split(','))
 
     def fetch_user_by_id(self, user_id):
         v = self._cache.get(self._cache_key('user', user_id))
@@ -134,9 +138,9 @@ def select_user():
     if query_string.isdigit():
         steam_user = helper.fetch_user_by_id(int(query_string))
     else:
-        match = self.STEAMCOMMUNITY_URL_RE.match(query_string)
+        match = helper.STEAMCOMMUNITY_URL_RE.match(query_string)
         if match:
-            query_string = m.group(1)
+            query_string = match.group(1)
         try:
             steam_user = helper.fetch_user_by_url_token(query_string)
         except steamapi.user.UserNotFoundError as err:
