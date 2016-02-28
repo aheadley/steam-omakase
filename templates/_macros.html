@@ -25,7 +25,7 @@ steam://install/{{ app.steam_appid }}
             alt="This user's profile is not public">
     <img src="{{ user.avatar }}" alt="{{ user.name }}" class="img-rounded img-responsive pull-left">
     <h4>
-        {{ steam_profile_link(user) }}
+        {{ user.name }}
     </h4>
 </label>
 {% endmacro %}
