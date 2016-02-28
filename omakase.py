@@ -13,7 +13,7 @@ import werkzeug.contrib.cache
 import bmemcached
 
 class OmakaseHelper(object):
-    STEAMCOMMUNITY_URL_RE = re.compile(r'https?://(?:www\.)?steamcommunity.com/id/([^/]+)/.*')
+    STEAMCOMMUNITY_URL_RE = re.compile(r'https?://(?:www\.)?steamcommunity.com/(?:id|profiles)/([^/]+)(?:/.*)?')
     STOREFRONT_API_ENDPOINT = 'http://store.steampowered.com/api/{method}/'
 
     PLATFORMS = [
@@ -142,13 +142,18 @@ def about():
 @app.route('/user/search', methods=['POST'])
 def select_user():
     query_string = flask.request.form['query_string']
+    if not query_string:
+        return flask.redirect(flask.url_for('index',
+            msg='Gotta give me something to search for'))
     app.logger.info('Searching for: %s', query_string)
+
+    match = helper.STEAMCOMMUNITY_URL_RE.match(query_string)
+    if match:
+        query_string = match.group(1)
+
     if query_string.isdigit():
         steam_user = helper.fetch_user_by_id(int(query_string))
     else:
-        match = helper.STEAMCOMMUNITY_URL_RE.match(query_string)
-        if match:
-            query_string = match.group(1)
         try:
             steam_user = helper.fetch_user_by_url_token(query_string)
         except steamapi.user.UserNotFoundError as err:
