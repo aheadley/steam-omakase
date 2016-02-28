@@ -22,6 +22,11 @@ class OmakaseHelper(object):
         'linux',
     ]
 
+    MULTIPLAYER_CATEGORIES = [
+        1,  # "Multiplayer"
+        9,  # "Co-op"
+    ]
+
     def __init__(self, app):
         # http://steamcommunity.com/dev/apikey
         self._api_key = os.environ.get('STEAM_API_KEY')
@@ -94,7 +99,7 @@ class OmakaseHelper(object):
         game_info = [helper.fetch_appdetails_by_id(gid) for gid in game_ids]
         game_info = [g for g in game_info if g is not None]
         game_info = [g for g in game_info \
-            if 1 in [c['id'] for c in g.get('categories', [])] \
+            if any([c['id'] in self.MULTIPLAYER_CATEGORIES for c in g.get('categories', [])]) \
                 and g['type'] == 'game'
                 and all(g['platforms'][v] for v in platforms)]
 
@@ -218,6 +223,13 @@ def game_intersection(user_id):
             steam_user=steam_user,
             steam_friends=friends,
             shared_games=shared_games)
+
+# @app.route('/user/<int:user_id>/game/<int:app_id>')
+# def test_omakase_template(user_id, app_id):
+#     return flask.render_template('game_intersection_omakase.html',
+#         steam_user=helper.fetch_user_by_id(user_id),
+#         steam_friends=[],
+#         the_game=helper.fetch_appdetails_by_id(app_id))
 
 if __name__ == '__main__':
     app.run(debug=True)
