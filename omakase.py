@@ -23,8 +23,11 @@ class OmakaseHelper(object):
     ]
 
     MULTIPLAYER_CATEGORIES = [
-        1,  # "Multiplayer"
+        1,  # "Multi-player"
         9,  # "Co-op"
+        # left out because it doesn't matter whether your friends have a copy
+        # 24, # "Local Co-op"
+        27, # "Cross-Platform Multiplayer"
     ]
 
     def __init__(self, app):
