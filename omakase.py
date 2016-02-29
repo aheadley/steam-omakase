@@ -161,7 +161,7 @@ def select_user():
     else:
         try:
             steam_user = helper.fetch_user_by_url_token(query_string)
-        except steamapi.user.UserNotFoundError as err:
+        except (steamapi.user.UserNotFoundError, ValueError) as err:
             return flask.redirect(flask.url_for('index',
                 msg='Couldn\'t find a user with that url'))
 
