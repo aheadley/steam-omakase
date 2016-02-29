@@ -14,7 +14,7 @@ import werkzeug.contrib.cache
 import bmemcached
 
 class OmakaseHelper(object):
-    STEAMCOMMUNITY_URL_RE = re.compile(r'https?://(?:www\.)?steamcommunity.com/(?:id|profiles)/([^/]+)(?:/.*)?', re.I)
+    STEAMCOMMUNITY_URL_RE = re.compile(r'(?:https?://)?(?:www\.)?steamcommunity.com/(?:id|profiles?)/([^/#?]+)', re.I)
     STOREFRONT_API_ENDPOINT = 'http://store.steampowered.com/api/{method}/'
 
     PLATFORMS = [
