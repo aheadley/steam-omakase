@@ -49,7 +49,7 @@ class OmakaseHelper(object):
                     self._memcached_config['password']))
         else:
             self._cache = werkzeug.contrib.cache.MemcachedCache(
-                os.environ.get('MEMCACHED_SERVERS').split(','))
+                bmemcached.Client(os.environ.get('MEMCACHED_SERVERS').split(',')))
 
     def fetch_user_by_id(self, user_id):
         v = self._cache.get(self._cache_key('user', user_id))
