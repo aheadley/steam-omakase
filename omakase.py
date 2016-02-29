@@ -7,6 +7,7 @@ import logging
 
 import flask
 import flask_bootstrap
+import flask.ext.compress
 import steamapi
 import requests
 import werkzeug.contrib.cache
@@ -130,6 +131,9 @@ class OmakaseHelper(object):
 
 app = flask.Flask(__name__)
 flask_bootstrap.Bootstrap(app)
+flask.ext.compress.Compress(app)
+
+app.config['COMPRESS_LEVEL'] = 1
 
 helper = OmakaseHelper(app)
 
