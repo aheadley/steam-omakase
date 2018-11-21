@@ -1,0 +1,22 @@
+---
+
+version: "3"
+services:
+  omakase-app:
+    image: steam-omakase:latest
+    build:
+      context: ../
+      dockerfile: ./Dockerfile
+    volumes:
+      - "${OMAKASE_SRC_DIR}:/app"
+    ports:
+      - '9080:80'
+    depends_on:
+      - omakase-cache
+    environment:
+      - OMAKASE_DEBUG
+      - STEAM_API_KEY
+      - MEMCACHED_SERVERS=omakase-cache
+
+  omakase-cache:
+    image: memcached:latest
