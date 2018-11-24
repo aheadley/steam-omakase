@@ -8,7 +8,7 @@ services:
       context: ../
       dockerfile: ./Dockerfile
     volumes:
-      - "${OMAKASE_SRC_DIR}:/app"
+      - "${OMAKASE_SRC_DIR}:/app:z"
     ports:
       - '9080:80'
     depends_on:

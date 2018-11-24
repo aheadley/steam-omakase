@@ -13,13 +13,14 @@ import steamapi
 import requests
 import werkzeug.contrib.cache
 import bmemcached
+from requests_futures.sessions import FuturesSession
 
 DEBUG_MODE = bool(os.environ.get('OMAKASE_DEBUG'))
 NEGATIVE_CACHE_HIT = -1
 
 class OmakaseHelper(object):
     STEAMCOMMUNITY_URL_RE = re.compile(r'(?:https?://)?(?:www\.)?steamcommunity.com/(?:id|profiles?)/([^/#?]+)', re.I)
-    STOREFRONT_API_ENDPOINT = 'http://store.steampowered.com/api/{method}/'
+    STOREFRONT_API_ENDPOINT = 'https://store.steampowered.com/api/{method}/'
 
     PLATFORMS = [
         'windows',
@@ -126,7 +127,40 @@ class OmakaseHelper(object):
         else:
             game_ids = []
 
-        games = self._fetch_many_by_id(game_ids, 'app', self.fetch_appdetails_by_id)
+        game_cache_keys = [self._cache_key('app', game_id) for game_id in game_ids]
+        games = dict(zip(game_ids, self._cache.get_many(*game_cache_keys)))
+        all_uncached_game_ids = [game_id for game_id, game in games.iteritems() if game is None]
+        with FuturesSession(max_workers=2) as session:
+            chunk_size = 20
+            self._app.logger.debug('Working on items: %s', len(all_uncached_game_ids))
+            for i in range(0, len(all_uncached_game_ids), chunk_size):
+                self._app.logger.debug('Working on items in chunk: %d<>%d', i, i+chunk_size)
+                uncached_game_ids = all_uncached_game_ids[i:i+chunk_size]
+                req_url = self.STOREFRONT_API_ENDPOINT.format(method='appdetails')
+                do_req = lambda app_id: session.get(req_url, timeout=5.0, params={'appids': app_id}, headers={'User-Agent': flask.request.headers['User-Agent']})
+                game_requests = [do_req(game_id) for game_id in uncached_game_ids]
+
+                uncached_games = dict(zip(uncached_game_ids, game_requests))
+                for game_id, game_request in uncached_games.iteritems():
+                    try:
+                        game_response = game_request.result()
+                        if game_response.ok:
+                            game_result = game_response.json()
+                        else:
+                            game_result = None
+                    except Exception as err:
+                        self._app.logger.exception(err)
+                        self._app.logger.debug('r.text=%s r.headers=%r', game_response.text, game_response.headers)
+                        game_result = None
+                    if game_result is not None and game_result[str(game_id)]['success']:
+                        uncached_games[game_id] = game_result[str(game_id)]['data']
+                    else:
+                        uncached_games[game_id] = NEGATIVE_CACHE_HIT
+                    self._app.logger.debug('%s=%s', game_id, bool(game_result))
+                cache_update = [(self._cache_key('app', uncached_game_id), uncached_games[uncached_game_id]) for uncached_game_id in uncached_game_ids]
+                self._cache.set_many(cache_update, timeout=3600 * 3)
+                games.update({k: v for k, v in uncached_games.iteritems() if v})
+
         return games
 
     def user_is_public(self, user):
@@ -146,7 +180,7 @@ class OmakaseHelper(object):
 
             self._app.logger.debug('App cache MISS: %s', cache_key)
             sf_response = self._storefront_request('appdetails', appids=app_id)
-    
+
             if sf_response is not None and sf_response[str(app_id)]['success']:
                 app_data = sf_response[str(app_id)]['data']
             else:
@@ -154,7 +188,7 @@ class OmakaseHelper(object):
                 self._app.logger.debug('sf_response=%s', sf_response)
                 self._cache.set(cache_key, NEGATIVE_CACHE_HIT, timeout=3600 * 3)
                 return None
-        
+
             self._cache.set(cache_key, app_data, timeout=3600 * 24 * 30)
         else:
             self._app.logger.debug('App cache HIT: %s:%s', cache_key, app_data['name'])
@@ -325,6 +359,10 @@ if DEBUG_MODE:
     def cache_stats():
         stats = helper._cache._client.stats()
         return pprint.pformat(stats)
+
+    @app.route('/debug')
+    def debug_dump():
+        return 'request.headers={}'.format(flask.request.headers['User-Agent'])
 
 
 if __name__ == '__main__':
