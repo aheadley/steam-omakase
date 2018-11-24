@@ -6,11 +6,25 @@ services:
     image: steam-omakase:latest
     build:
       context: ../
-      dockerfile: ./Dockerfile
+      dockerfile: ./docker/Dockerfile.web
     volumes:
       - "${OMAKASE_SRC_DIR}:/app:z"
     ports:
       - '9080:80'
+    depends_on:
+      - omakase-cache
+    environment:
+      - OMAKASE_DEBUG
+      - STEAM_API_KEY
+      - MEMCACHED_SERVERS=omakase-cache
+
+  omakase-worker:
+    image: steam-omakase:worker
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile.worker
+    volumes:
+      - "${OMAKASE_SRC_DIR}:/app:z"
     depends_on:
       - omakase-cache
     environment:

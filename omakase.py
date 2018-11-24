@@ -5,6 +5,7 @@ import random
 import re
 import logging
 import pprint
+import time
 
 import flask
 import flask_bootstrap
@@ -16,11 +17,18 @@ import bmemcached
 from requests_futures.sessions import FuturesSession
 
 DEBUG_MODE = bool(os.environ.get('OMAKASE_DEBUG'))
-NEGATIVE_CACHE_HIT = -1
+NEGATIVE_CACHE_HIT = 'negative cache hit'
+
+TIMEOUT_USER            = 60 * 60 * 24 * 30
+TIMEOUT_USER_FRIENDS    = 60 * 60 * 24 * 3
+TIMEOUT_USER_APPS       = 60 * 60 * 24 * 1
+TIMEOUT_APP             = 60 * 60 * 24 * 90
+TIMEOUT_NEGATIVE        = 300
 
 class OmakaseHelper(object):
     STEAMCOMMUNITY_URL_RE = re.compile(r'(?:https?://)?(?:www\.)?steamcommunity.com/(?:id|profiles?)/([^/#?]+)', re.I)
     STOREFRONT_API_ENDPOINT = 'https://store.steampowered.com/api/{method}/'
+    APPLIST_URL = 'https://api.steampowered.com/ISteamApps/GetAppList/v0001/'
 
     PLATFORMS = [
         'windows',
@@ -75,7 +83,7 @@ class OmakaseHelper(object):
             except Exception as err:
                 self._app.logger.exception(err)
                 return None
-            self._cache.set(cache_key, user, timeout=3600 * 24 * 1)
+            self._cache.set(cache_key, user, timeout=TIMEOUT_USER)
         else:
             self._app.logger.debug('User cache HIT: %s:%s', cache_key, user.name)
 
@@ -92,7 +100,7 @@ class OmakaseHelper(object):
             if friend_ids is None:
                 self._app.logger.debug('User friends cache MISS: %s', cache_key)
                 friend_ids = [friend.id for friend in user.friends]
-                self._cache.set(cache_key, friend_ids, timeout=3600 * 24 * 3)
+                self._cache.set(cache_key, friend_ids, timeout=TIMEOUT_USER_FRIENDS)
             else:
                 self._app.logger.debug('User friends cache HIT: %s', cache_key)
         else:
@@ -106,7 +114,7 @@ class OmakaseHelper(object):
         cache_keys = [self._cache_key(key_ns, obj_id) for obj_id in obj_ids]
         cached_objs = zip(obj_ids, self._cache.get_many(*cache_keys))
         cache_hits = len(list(obj_id for obj_id, obj in cached_objs if obj))
-        self._app.logger.debug('%s multicache HIT/MISS: %d/%d', key_ns, cache_hits, len(cached_objs))
+        self._app.logger.debug('%s multicache HIT/MISS: %d/%d', key_ns, cache_hits, len(cached_objs) - cache_hits)
         self._app.logger.debug('Filling in %s cache misses...', key_ns)
         objs = [obj if obj else fetch_method(obj_id, use_cache=False) \
             for obj_id, obj in cached_objs]
@@ -121,26 +129,30 @@ class OmakaseHelper(object):
             if game_ids is None:
                 self._app.logger.debug('User games cache MISS: %s', cache_key)
                 game_ids = [game.id for game in user.games]
-                self._cache.set(cache_key, game_ids, timeout=3600 * 24 * 3)
+                self._cache.set(cache_key, game_ids, timeout=TIMEOUT_USER_APPS)
             else:
                 self._app.logger.debug('User games cache HIT: %s', cache_key)
         else:
             game_ids = []
 
+        # self._app.logger.debug('Games for user:%s=%s', user.id, game_ids)
         game_cache_keys = [self._cache_key('app', game_id) for game_id in game_ids]
         games = dict(zip(game_ids, self._cache.get_many(*game_cache_keys)))
         all_uncached_game_ids = [game_id for game_id, game in games.iteritems() if game is None]
-        with FuturesSession(max_workers=2) as session:
-            chunk_size = 20
+        with FuturesSession(max_workers=10) as session:
+            chunk_size = 100
             self._app.logger.debug('Working on items: %s', len(all_uncached_game_ids))
             for i in range(0, len(all_uncached_game_ids), chunk_size):
-                self._app.logger.debug('Working on items in chunk: %d<>%d', i, i+chunk_size)
+                self._app.logger.debug('Working on items in chunk: [%d,%d]', i, i+chunk_size)
                 uncached_game_ids = all_uncached_game_ids[i:i+chunk_size]
                 req_url = self.STOREFRONT_API_ENDPOINT.format(method='appdetails')
-                do_req = lambda app_id: session.get(req_url, timeout=5.0, params={'appids': app_id}, headers={'User-Agent': flask.request.headers['User-Agent']})
+                do_req = lambda app_id: session.get(req_url, timeout=5.0,
+                    params={'appids': app_id},
+                    headers={'User-Agent': flask.request.headers['User-Agent']})
                 game_requests = [do_req(game_id) for game_id in uncached_game_ids]
 
                 uncached_games = dict(zip(uncached_game_ids, game_requests))
+                negative_cache_hits = {}
                 for game_id, game_request in uncached_games.iteritems():
                     try:
                         game_response = game_request.result()
@@ -155,13 +167,19 @@ class OmakaseHelper(object):
                     if game_result is not None and game_result[str(game_id)]['success']:
                         uncached_games[game_id] = game_result[str(game_id)]['data']
                     else:
-                        uncached_games[game_id] = NEGATIVE_CACHE_HIT
-                    self._app.logger.debug('%s=%s', game_id, bool(game_result))
-                cache_update = [(self._cache_key('app', uncached_game_id), uncached_games[uncached_game_id]) for uncached_game_id in uncached_game_ids]
-                self._cache.set_many(cache_update, timeout=3600 * 3)
-                games.update({k: v for k, v in uncached_games.iteritems() if v})
+                        uncached_games[game_id] = None
+                        negative_cache_hits[game_id] = NEGATIVE_CACHE_HIT
 
-        return games
+                cache_update = [(self._cache_key('app', uncached_game_id), uncached_games[uncached_game_id]) \
+                    for uncached_game_id in uncached_game_ids]
+                self._cache.set_many(cache_update, timeout=TIMEOUT_APP)
+
+                self._cache.set_many([(self._cache_key('app', nch_id), NEGATIVE_CACHE_HIT) \
+                    for nch_id in negative_cache_hits.iterkeys()], timeout=TIMEOUT_NEGATIVE)
+
+                games.update({k: v for k, v in uncached_games.iteritems() if v and v != NEGATIVE_CACHE_HIT})
+
+        return games.itervalues()
 
     def user_is_public(self, user):
         return user.privacy >= 3
@@ -186,22 +204,20 @@ class OmakaseHelper(object):
             else:
                 self._app.logger.debug('Failed to pull app details from storefront: %s', app_id)
                 self._app.logger.debug('sf_response=%s', sf_response)
-                self._cache.set(cache_key, NEGATIVE_CACHE_HIT, timeout=3600 * 3)
+                self._cache.set(cache_key, NEGATIVE_CACHE_HIT, timeout=TIMEOUT_NEGATIVE)
                 return None
 
-            self._cache.set(cache_key, app_data, timeout=3600 * 24 * 30)
+            self._cache.set(cache_key, app_data, timeout=TIMEOUT_APP)
         else:
             self._app.logger.debug('App cache HIT: %s:%s', cache_key, app_data['name'])
         return app_data
 
     def get_game_intersection(self, steam_user, friends, platforms):
         game_ids = set(g['steam_appid'] for g in self.fetch_games_by_user(steam_user) if isinstance(g, dict))
-
         for friend in friends:
             if self.user_is_public(friend):
                 game_ids &= set(g['steam_appid'] for g in self.fetch_games_by_user(friend) if isinstance(g, dict))
 
-        # game_info = [self.fetch_appdetails_by_id(gid) for gid in game_ids]
         game_info = self._fetch_many_by_id(game_ids, 'app', self.fetch_appdetails_by_id)
         game_info = [g for g in game_info if g is not None]
         game_info = [g for g in game_info \
@@ -230,6 +246,32 @@ class OmakaseHelper(object):
         req_url = self.STOREFRONT_API_ENDPOINT.format(method=method)
         resp = requests.get(req_url, params=kwargs, timeout=5.0)
         return resp.json()
+
+    def run_worker(self, args):
+        self._app.logger.addHandler(logging.StreamHandler())
+        if args.debug:
+            self._app.logger.setLevel(logging.DEBUG)
+        else:
+            self._app.logger.setLevel(logging.INFO)
+
+        keep_running = True
+        while keep_running:
+            app_ids = [app['appid'] for app in requests.get(self.APPLIST_URL, timeout=10.0).json()['applist']['apps']['app']]
+            self._app.logger.info('Got list of app_ids: %d', len(app_ids))
+
+            random.shuffle(app_ids)
+            for app_id in app_ids:
+                try:
+                    app = self.fetch_appdetails_by_id(app_id)
+                except Exception as err:
+                    self._app.logger.error('Exception on app_id=%d', app_id)
+                    self._app.logger.exception(err)
+                if app is None:
+                    self._app.logger.debug('Negative response on app=%d', app_id)
+                    time.sleep(5.0)
+                else:
+                    self._app.logger.debug('Cached app=%d', app_id)
+                    time.sleep(1.0)
 
 app = flask.Flask(__name__)
 flask_bootstrap.Bootstrap(app)
@@ -348,12 +390,15 @@ if DEBUG_MODE:
     @app.route('/debug/cache', methods=['GET', 'DELETE'])
     def flush_cache():
         helper._cache._client.flush_all()
-        return 'OK'
+        return 'CACHE FLUSHED'
 
-    @app.route('/debug/cache/<cache_key>', methods=['DELETE'])
+    @app.route('/debug/cache/<cache_key>', methods=['GET', 'DELETE'])
     def flush_cache_key(cache_key):
-        helper._cache._client.delete(cache_key)
-        return 'OK'
+        if flask.request.method == 'GET':
+            return pprint.pformat(helper._cache.get(cache_key))
+        elif flask.request.method == 'DELETE':
+            helper._cache._client.delete(cache_key)
+            return 'KEY FLUSHED: %s' % cache_key
 
     @app.route('/debug/cache-stats')
     def cache_stats():
@@ -364,6 +409,20 @@ if DEBUG_MODE:
     def debug_dump():
         return 'request.headers={}'.format(flask.request.headers['User-Agent'])
 
+def main(args):
+    if args.run_mode == 'app':
+        app.run(debug=DEBUG_MODE)
+    elif args.run_mode == 'worker':
+        helper.run_worker(args)
 
 if __name__ == '__main__':
-    app.run(debug=DEBUG_MODE)
+    import argparse
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('run_mode', choices=['app', 'worker'])
+    parser.add_argument('-d', '--debug', action='store_true', default=DEBUG_MODE)
+
+    args = parser.parse_args()
+    DEBUG_MODE = args.debug
+    main(args)

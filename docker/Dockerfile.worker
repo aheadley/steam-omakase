@@ -1,0 +1,15 @@
+# foo
+
+FROM heroku/heroku:18
+MAINTAINER Alex Headley <aheadley@waysaboutstuff.com>
+
+ENV OMAKASE_DEBUG STEAM_API_KEY MEMCACHED_SERVERS
+
+COPY ./ /app/
+
+RUN apt-get update -y
+RUN apt-get install -y python-pip python-virtualenv
+RUN virtualenv /app-venv
+RUN /app-venv/bin/pip install -r /app/requirements.txt
+
+CMD ["/app-venv/bin/python2.7", "/app/omakase.py", "worker"]
