@@ -1,4 +1,4 @@
-git+https://github.com/aheadley/steamapi.git@fix-batch-player-summaries
+git+https://github.com/aheadley/steamapi.git@14bf3686dd91d3badd036adbb9e183de7af7058c
 Flask==0.10.1
 Flask-Bootstrap==3.3.5.7
 requests==2.3.0
